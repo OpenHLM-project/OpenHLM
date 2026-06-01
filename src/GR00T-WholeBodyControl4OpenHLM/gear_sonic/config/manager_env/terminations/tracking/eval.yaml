@@ -1,0 +1,25 @@
+# Evaluation terminations — relaxed thresholds vs training for fairer eval metrics
+
+defaults:
+  - terms/anchor_pos@_here_
+  - terms/anchor_ori_full@_here_
+  - terms/ee_body_pos@_here_
+  - terms/motion_time_out@_here_
+
+_target_: gear_sonic.envs.manager_env.mdp.terminations.TerminationsCfg
+
+anchor_pos:
+  params:
+    threshold: 0.25
+    threshold_adaptive: false
+    down_threshold: 0.25
+
+anchor_ori_full:
+  params:
+    threshold: 1.0
+
+ee_body_pos:
+  params:
+    threshold: 0.25
+    threshold_adaptive: false
+    down_threshold: 0.25

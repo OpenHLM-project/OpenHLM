@@ -1,0 +1,79 @@
+# SONIC Release - Observation Configuration
+# ==========================================
+# For ONNX models exported from sonic_release checkpoint via:
+#   python gear_sonic/eval_agent_trl.py +checkpoint=sonic_release/last.pt \
+#       +headless=True ++num_envs=1 +export_onnx_only=true
+#
+# Encoder input dimension: 1751 (1 encoder_index + 1750 tokenizer obs)
+# Uses the unitoken_all_noz tokenizer config (3 encoders: g1, teleop, smpl)
+
+observations:
+
+  - name: "token_state"
+    enabled: true
+
+  - name: "his_base_angular_velocity_10frame_step1"
+    enabled: true
+
+  - name: "his_body_joint_positions_10frame_step1"
+    enabled: true
+
+  - name: "his_body_joint_velocities_10frame_step1"
+    enabled: true
+
+  - name: "his_last_actions_10frame_step1"
+    enabled: true
+
+  - name: "his_gravity_dir_10frame_step1"
+    enabled: true
+
+encoder:
+  dimension: 64
+  use_fp16: false
+  encoder_observations:
+    # Used by all encoder modes
+    - name: "encoder_index"
+      enabled: true
+    # G1 mode
+    - name: "command_multi_future_nonflat"
+      enabled: true
+    - name: "motion_anchor_ori_b_mf_nonflat"
+      enabled: true
+    # Teleop mode
+    - name: "command_multi_future_lower_body"
+      enabled: true
+    - name: "vr_3point_local_target"
+      enabled: true
+    - name: "vr_3point_local_orn_target"
+      enabled: true
+    - name: "motion_anchor_ori_b"
+      enabled: true
+    # SMPL mode
+    - name: "smpl_joints_multi_future_local_nonflat"
+      enabled: true
+    - name: "smpl_root_ori_b_multi_future"
+      enabled: true
+    - name: "joint_pos_multi_future_wrist_for_smpl"
+      enabled: true
+  encoder_modes:
+    - name: "g1"
+      mode_id: 0
+      required_observations:
+        - encoder_index
+        - command_multi_future_nonflat
+        - motion_anchor_ori_b_mf_nonflat
+    - name: "teleop"
+      mode_id: 1
+      required_observations:
+        - encoder_index
+        - command_multi_future_lower_body
+        - vr_3point_local_target
+        - vr_3point_local_orn_target
+        - motion_anchor_ori_b
+    - name: "smpl"
+      mode_id: 2
+      required_observations:
+        - encoder_index
+        - smpl_joints_multi_future_local_nonflat
+        - smpl_root_ori_b_multi_future
+        - joint_pos_multi_future_wrist_for_smpl

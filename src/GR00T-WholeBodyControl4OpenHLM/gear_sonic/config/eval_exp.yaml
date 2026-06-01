@@ -1,0 +1,34 @@
+# @package _global_
+
+# Required parameter: experiment directory to monitor
+experiment_dir: ???
+max_train_steps: 1000000
+
+# Number of environments for metrics eval (multi-GPU accelerate)
+num_eval_envs: 3072
+
+# Number of environments for render eval (single GPU)
+# VRAM scales ~linearly: 64 envs ≈ 23GB, 32 envs ≈ 12GB
+# Keep ≤ 64 on L40 (49GB VRAM) to avoid OOM
+num_render_videos: 64
+num_test_render_videos: 32
+
+# Monitoring configuration
+scan_interval: 0       # seconds between scans for new checkpoints
+checkpoint_ready_delay: 60  # seconds to wait after checkpoint modification before evaluating
+
+eval_frequency: null   # null = eval every checkpoint
+eval_last_n: null      # null = eval all; integer = only eval last N checkpoints
+eval_callbacks: im_eval
+eval_datasets: null
+eval_modes: [null]
+
+# Single pass mode: evaluate pending checkpoints once and exit
+single_pass: false
+
+# Extra overrides to pass to eval_agent_trl.py (list of strings)
+# Example: ["++manager_env.commands.motion.start_from_first_frame=true"]
+extra_overrides: []
+
+# Set to true to suppress eval subprocess output
+capture_output: true

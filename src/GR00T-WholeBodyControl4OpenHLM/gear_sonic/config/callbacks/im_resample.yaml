@@ -1,0 +1,4 @@
+im_resample:
+  _target_: gear_sonic.trl.callbacks.im_resample_callback.ImResampleCallback
+  motion_resample_frequency: 250
+  # skip_resample_frequency: 500

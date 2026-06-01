@@ -1,0 +1,3 @@
+g1_soma_latent:
+  _target_: gear_sonic.trl.losses.token_losses.G1SomaLatentLoss
+  loss_type: "mse" # Options: "mse", "l1", "huber", "cosine"

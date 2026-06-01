@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Recordings (local test artifacts)
+recordings/
+
+# Unused intermediate checkpoints
+out/motionbricks_pose/version_1/checkpoints/model-step=0850000.ckpt
+out/motionbricks_root/version_1/checkpoints/model-step=1350000.ckpt
+
+# Test logs
+out/testing/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Override monorepo root .gitignore: the motionbricks Python package uses
+# `data/` and `models/` directory names for source code, not runtime
+# artifacts. Re-include only the specific source directories.
+!motionbricks/data/
+!motionbricks/data/**
+!motionbricks/motion_backbone/models/
+!motionbricks/motion_backbone/models/**
+!motionbricks/vqvae/models/
+!motionbricks/vqvae/models/**

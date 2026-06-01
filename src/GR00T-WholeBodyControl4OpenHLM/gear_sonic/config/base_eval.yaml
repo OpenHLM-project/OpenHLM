@@ -1,0 +1,26 @@
+# @package _global_
+
+defaults:
+  - /callbacks/im_eval
+  - manager_env/recorders: empty
+  - _self_
+
+checkpoint: ???
+
+algo:
+  config:
+    eval:
+      num_eval_episodes: 150
+      save_videos: false
+      video_save_prob: 1.0
+      save_goal_reached_only: true
+      save_trajectories: false
+      num_save_episodes: 200
+
+eval_timestamp: ${now:%Y%m%d_%H%M%S}
+eval_name: TEST
+eval_base_dir: logs_eval
+eval_log_dir: ${eval_base_dir}/${eval_timestamp}-${eval_name}
+hydra:
+  run:
+    dir: ${eval_log_dir}

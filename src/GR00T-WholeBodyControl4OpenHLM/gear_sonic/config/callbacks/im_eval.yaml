@@ -1,0 +1,5 @@
+im_eval:
+  _target_: gear_sonic.trl.callbacks.im_eval_callback.ImEvalCallback
+  eval_frequency: 1
+  eval_only: true
+  output_dir: ${experiment_dir}/eval_metrics

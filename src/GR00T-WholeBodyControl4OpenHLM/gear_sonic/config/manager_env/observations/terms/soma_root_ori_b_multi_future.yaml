@@ -1,0 +1,6 @@
+soma_root_ori_b_multi_future:
+  _target_: isaaclab.managers.ObservationTermCfg
+  func: gear_sonic.envs.manager_env.mdp:soma_root_ori_b_mf
+  params:
+    command_name: "motion"
+    non_flatten: true

@@ -1,0 +1,13 @@
+teleop:
+  inputs: ["command_multi_future_lower_body", "vr_3point_local_target", "vr_3point_local_orn_target", "motion_anchor_ori_b"]
+  params:
+    _target_: gear_sonic.trl.modules.base_module.BaseModule
+    input_dim:
+    output_dim:
+    num_input_temporal_dims:
+    num_output_temporal_dims: ${algo.config.actor.backbone.max_num_tokens}
+    module_config_dict:
+      layer_config:
+        type: MLP
+        hidden_dims: [2048, 1024, 512, 512]
+        activation: SiLU

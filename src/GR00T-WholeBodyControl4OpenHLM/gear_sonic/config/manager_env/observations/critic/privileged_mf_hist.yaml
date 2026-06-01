@@ -1,0 +1,30 @@
+# Standard critic observations composition
+
+defaults:
+  - ../terms/command_multi_future@_here_
+  - ../terms/motion_anchor_pos_b@_here_
+  - ../terms/motion_anchor_ori_b@_here_
+  - ../terms/body_pos@_here_
+  - ../terms/body_ori@_here_
+  - ../terms/base_lin_vel@_here_
+  - ../terms/base_ang_vel@_here_
+  - ../terms/joint_pos@_here_
+  - ../terms/joint_vel@_here_
+  - ../terms/actions@_here_
+
+_target_: gear_sonic.envs.manager_env.mdp.observations.PrivilegedCfg
+
+base_ang_vel:
+  history_length: ${critic_prop_history_length}
+
+base_lin_vel:
+  history_length: ${critic_prop_history_length}
+
+joint_pos:
+  history_length: ${critic_prop_history_length}
+
+joint_vel:
+  history_length: ${critic_prop_history_length}
+
+actions:
+  history_length: ${critic_actions_history_length}

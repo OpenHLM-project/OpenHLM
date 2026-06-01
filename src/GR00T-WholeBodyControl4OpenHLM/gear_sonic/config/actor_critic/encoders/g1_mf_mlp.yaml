@@ -1,0 +1,13 @@
+g1:
+  inputs: ["command_multi_future_nonflat", "motion_anchor_ori_b_mf_nonflat"]
+  params:
+    _target_: gear_sonic.trl.modules.base_module.BaseModule
+    input_dim:
+    output_dim:
+    num_input_temporal_dims: ${manager_env.commands.motion.num_future_frames}
+    num_output_temporal_dims: ${algo.config.actor.backbone.max_num_tokens}
+    module_config_dict:
+      layer_config:
+        type: MLP
+        hidden_dims: [2048, 1024, 512, 512]
+        activation: SiLU

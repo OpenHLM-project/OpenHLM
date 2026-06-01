@@ -1,0 +1,66 @@
+# systemd service for the SONIC composed camera server.
+#
+# Publishes JPEG-encoded camera frames over ZMQ so the data exporter
+# (on the workstation) can subscribe and record.
+#
+# ── Setup ────────────────────────────────────────────────────────
+#  The install script can generate and install this automatically:
+#       bash install_scripts/install_camera_server.sh
+#
+#  Or manually:
+#  1. Edit USER, HOME, REPO_DIR, and the ExecStart command below.
+#  2. Copy to systemd:
+#       sudo cp systemd/composed_camera_server.service /etc/systemd/system/
+#  3. Enable and start:
+#       sudo systemctl daemon-reload
+#       sudo systemctl enable composed_camera_server.service
+#       sudo systemctl start composed_camera_server.service
+#  4. Check status:
+#       sudo systemctl status composed_camera_server.service
+#       journalctl -u composed_camera_server.service -f
+#
+# ── Finding your device ID ───────────────────────────────────────
+#  OAK cameras:
+#       python -c "import depthai as dai; print(dai.Device.getAllAvailableDevices())"
+#  RealSense:
+#       rs-enumerate-devices --short
+#  USB:
+#       ls /dev/video*    # use the index number, e.g. "0" for /dev/video0
+# ─────────────────────────────────────────────────────────────────
+
+[Unit]
+Description=SONIC Composed Camera Server (ZMQ)
+After=network.target
+
+[Service]
+Type=simple
+
+# ── EDIT THESE for your robot ────────────────────────────────────
+User=nvidia
+Environment="HOME=/home/nvidia"
+Environment="REPO_DIR=/home/nvidia/GR00T-WholeBodyControl"
+# ─────────────────────────────────────────────────────────────────
+
+WorkingDirectory=${REPO_DIR}
+
+# Edit the ExecStart line to match your camera setup.
+# Single ego-view OAK camera (device ID required when multiple OAK devices connected):
+ExecStart=${REPO_DIR}/.venv_camera/bin/python -m gear_sonic.camera.composed_camera \
+    --ego-view-camera oak \
+    --ego-view-device-id YOUR_MXID_HERE \
+    --port 5555
+
+# Multi-camera example (ego + wrist cameras):
+# ExecStart=${REPO_DIR}/.venv_camera/bin/python -m gear_sonic.camera.composed_camera \
+#     --ego-view-camera oak --ego-view-device-id EGO_MXID \
+#     --left-wrist-camera oak --left-wrist-device-id LEFT_MXID \
+#     --right-wrist-camera oak --right-wrist-device-id RIGHT_MXID \
+#     --port 5555
+
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

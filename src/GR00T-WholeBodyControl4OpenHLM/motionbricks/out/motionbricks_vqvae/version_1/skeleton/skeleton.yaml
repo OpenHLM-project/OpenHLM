@@ -1,0 +1,6 @@
+base_name: g1skel34
+folder: ${data.folder}/features/motion_rep/${motion_rep.name}_fps_${fps}/skeleton
+t_pose: capture
+orig_prefix: ''
+name: g1skel34
+_target_: motionbricks.motionlib.core.skeletons.g1.G1Skeleton34

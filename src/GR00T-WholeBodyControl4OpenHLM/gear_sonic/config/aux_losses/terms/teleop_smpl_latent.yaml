@@ -1,0 +1,4 @@
+teleop_smpl_latent:
+  _target_: gear_sonic.trl.losses.token_losses.TeleopSmplLatentLoss
+  loss_type: "mse"  # Options: "mse", "l1", "huber", "cosine"
+  detach_teleop_target: True  # teleop is BRIDGE, train smpl to match teleop

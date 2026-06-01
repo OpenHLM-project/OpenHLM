@@ -1,0 +1,3 @@
+reencoded_smpl_g1_latent:
+  _target_: gear_sonic.trl.losses.token_losses.ReencodedSmplG1LatentLoss
+  loss_type: "mse"  # Options: "mse", "l1", "huber", "cosine"

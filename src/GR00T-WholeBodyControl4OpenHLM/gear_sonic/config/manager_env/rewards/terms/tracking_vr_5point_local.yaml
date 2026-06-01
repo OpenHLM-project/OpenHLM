@@ -1,0 +1,7 @@
+tracking_vr_5point_local:
+  _target_: isaaclab.managers.RewardTermCfg
+  func: gear_sonic.envs.manager_env.mdp:tracking_local_vr_5point_error
+  weight: 2.0
+  params:
+    command_name: "motion"
+    std: 0.1

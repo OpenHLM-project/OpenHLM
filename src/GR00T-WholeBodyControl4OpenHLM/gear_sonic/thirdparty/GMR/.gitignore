@@ -1,0 +1,114 @@
+# Python
+*.egg-info/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git
+.mypy_cache
+.pytest_cache
+.hypothesis
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Data directories
+data/
+data_record/
+Download/
+assets/body_models/
+
+# Media files
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# Model files
+smplx/
+body_models/
+*.pkl
+*.pth
+*.pt
+*.ckpt
+
+# Logs
+MUJOCO_LOG.TXT
+*.log
+
+# Session files
+session*.json
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Cache
+.cache/
+*.cache
+
+videos/
+PythonClient/
+
+TEST_MOTIONS_MY.md
+
+tmp/
+
+motion_data/
+
+GVHMR/
+
+batch_twist1_to_csv.py
+
+yaml_to_flat_csv.py
+
+compute_rotation.py

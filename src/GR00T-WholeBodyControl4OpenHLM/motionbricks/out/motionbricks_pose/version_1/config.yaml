@@ -1,0 +1,245 @@
+model:
+  backbone_network:
+    _target_: motionbricks.motion_backbone.neural_modules.pose_backbone.pose_backbone_network
+    motion_rep: ???
+    args:
+      pose_root_mode: ${model.args.pose_root_mode}
+      min_tokens: ${model.args.min_tokens}
+      max_tokens: ${model.args.max_tokens}
+      down_t: ${model.args.down_t}
+      pose_token_mlp_num_layers: 2
+      root_feat_width: 256
+      pose_feat_width: 640
+      token_length_feat_width: 128
+      text_emb_dim: 4096
+      text_embeddings: ${data.text_embeddings}
+      local_pose_feature: ${model.args.local_pose_feature}
+      cond_root_feature: ${model.args.cond_root_feature}
+      cond_root_feature_is_from_motion_rep: ${model.args.cond_root_feature_is_from_motion_rep}
+      n_embd: 1024
+      n_head: 16
+      n_layers: 16
+      pose_vqvae:
+        nb_code: ${model.pose_vqvae_network.nb_code}
+        code_dim: ${model.pose_vqvae_network.code_dim}
+        num_heads: ${model.pose_vqvae_network.num_heads}
+        has_codebook: ${oc.select:model.pose_vqvae_network.has_codebook,true}
+      root_vqvae:
+        nb_code: 1024
+        code_dim: 60
+        num_heads: 1
+  pose_vqvae_network:
+    _target_: motionbricks.vqvae.neural_modules.vqvae.VQVAE
+    pose_root_mode: pose
+    motion_rep: ???
+    encoder_state_dim: 241
+    decoder_state_dim: 329
+    decoder_target_cond_dim: 241
+    decoder_external_cond_dim: 2
+    feature_mode:
+    - joint_positions_and_rotations_and_hip_height
+    - pose
+    - joint_positions_and_rotations_and_hip_height
+    - root_without_hip_height_without_heading
+    quantizer_strategy: multihead_ema_reset
+    quantizer_mu: 0.99
+    nb_code: 100000000
+    code_dim: 256
+    output_emb_width: 256
+    down_t: 2
+    stride_t: 2
+    width: 512
+    depth: 4
+    dilation_growth_rate: 3
+    activation: relu
+    num_heads: 8
+    kmeans_init: false
+    norm: None
+    calculate_per_head_perplexity: true
+    cond_fusion_last_layer: false
+  _target_: motionbricks.motion_backbone.models.pose_model.MotionModel
+  motion_rep: ???
+  root_vqvae_network: null
+  pose_vqvae_motion_rep: local
+  denoiser:
+    backbone:
+      llm_shape: null
+  args:
+    min_tokens: 6
+    max_tokens: 16
+    down_t: 2
+    vqvae_model_ckpt_path: out/motionbricks_vqvae/version_1/checkpoints/model-step=2000000.ckpt
+    pose_vqvae_motion_rep: ${model.pose_vqvae_motion_rep}
+    incorrect_token_ratio_min: 0.0
+    incorrect_token_ratio_max: 1.0
+    masked_token_ratio: 0.8
+    batchsize_mul_factor: 2
+    pose_root_mode: pose
+    local_pose_feature: joint_positions_and_rotations_and_hip_height
+    cond_root_feature: root_without_hip_height
+    cond_root_feature_is_from_motion_rep: global
+    max_num_start_keyframes: 4
+    no_start_keyframe_prob: 0.0
+    max_num_end_keyframes: 4
+    no_end_keyframe_prob: 0.0
+    max_num_middle_keyframes: 8
+    no_middle_keyframe_prob: 0.5
+    prob_provide_text_emb: 0.2
+    keyframe_num_warmup_steps: 200000
+    floor_estimation: min_joint_height_within_windows
+    floor_estimation_window_time: 1.0
+  optimizer:
+    _target_: adam_atan2_pytorch.AdamAtan2
+    _partial_: true
+    lr: 0.0001
+    weight_decay: 0.0
+  scheduler:
+    _target_: motionbricks.motionlib.train.scheduler.WarmupCosineScheduler
+    _partial_: true
+    num_warmup_steps: 10000
+    num_training_steps: ${trainer.max_steps}
+    final_lr: 2.0e-06
+    last_epoch: -1
+    lt_kwargs:
+      interval: step
+      frequency: 1
+trainer:
+  _target_: pytorch_lightning.Trainer
+  precision: 32
+  enable_progress_bar: false
+  profiler: null
+  check_val_every_n_epoch: null
+  detect_anomaly: false
+  num_sanity_val_steps: 0
+  max_steps: 2000001
+  gradient_clip_val: 0.5
+  log_every_n_steps: 50
+  val_check_interval: 50000
+  devices: 8
+  num_nodes: 4
+  accelerator: gpu
+  strategy: ddp
+loggers:
+  out_dir: ${out_dir}
+  cfg_id: ${id}
+  max_steps: ${trainer.max_steps}
+  log_nsteps: ${trainer.log_every_n_steps}
+  use_wandb: true
+  wandb_run: ${wandb_run}
+  wandb_group: null
+  wandb_project: motionbricks
+  wandb_entity: null
+  wandb_run_name: motionbricks_pose
+  logger_project: motionbricks
+callbacks:
+  callback_dict:
+    checkpoint_epoch_cb:
+      _target_: motionbricks.motionlib.train.callbacks.ckpt.ReadPermissionModelCheckpoint
+      monitor: null
+      dirpath: out/motionbricks_pose/version_1/checkpoints
+      filename: model-{step:07d}
+      save_last: false
+      save_top_k: -1
+      mode: min
+      every_n_train_steps: 50000
+    learning_rate_monitor:
+      _target_: pytorch_lightning.callbacks.LearningRateMonitor
+      logging_interval: step
+    autoresume:
+      _target_: motionbricks.motionlib.train.callbacks.autoresume.AutoResumeCallback
+      autoresume_after: 1260000
+      save_checkpoint_on_exception: true
+    pose_evaluate:
+      _target_: motionbricks.motion_backbone.callbacks.evaluation.PoseEvaluate
+      every_n_steps: 50001
+      train_dataloader: ???
+      val_dataloader: ???
+      seed: 2333
+      batch_size: 32
+      max_num_data: 40000
+      max_num_visualization: 32
+      out_dir: ${run_dir}/vis
+  only_rank_zero:
+  - learning_rate_monitor
+  - pose_evaluate
+  need_version: []
+  need_dataloaders:
+  - pose_evaluate
+  need_ema: []
+  need_motionbricks_test: []
+  need_log:
+  - pose_evaluate
+  need_autoresume:
+  - pose_evaluate
+  need_mask_cond_sampler: []
+  need_one_logger_callback:
+  - autoresume
+dataloader:
+  _target_: torch.utils.data.DataLoader
+  batch_size: 128
+  num_workers: 11
+  shuffle: ???
+  persistent_workers: true
+  collate_fn:
+    _target_: motionbricks.motionlib.data.utils.collate_batch
+    _partial_: true
+    llm_shape: ${model.denoiser.backbone.llm_shape}
+    num_frames: null
+data:
+  _target_: motionbricks.motionlib.data.motion_dataset.MotionDataset
+  name: motionbricks-G1
+  folder: ../datasets/motionbricks-G1
+  text_embeddings: null
+  split: ???
+  motion_sampler:
+    _target_: motionbricks.motionlib.data.motion_sampler.MaxDurationRandomCrop
+    max_seconds: 30
+  motion_loading_mode: memmap
+  use_natural_desc: true
+  use_short_desc: true
+  use_technical_desc: false
+  use_nv_overview_desc: false
+  nv_overview_prob: null
+  drop_text_prob: 0.1
+  augment_text: false
+  aug_text_suffix: ''
+  aug_text_prob: 0.75
+  aug_text_ind_range:
+  - 1
+  - 61
+  load_neutral_joints: false
+  timelines_mode: false
+  timelines_name: null
+  dataset_sampler: null
+  dataset_sampler_only_at_train: true
+  to_canonicalize: false
+  randomize_first_heading: true
+  loading_mode: motion_only
+skeleton:
+  base_name: g1skel34
+  folder: out/motionbricks_pose/version_1/skeleton
+  t_pose: capture
+  orig_prefix: ''
+  name: g1skel34
+  _target_: motionbricks.motionlib.core.skeletons.g1.G1Skeleton34
+motion_rep:
+  name: ${skeleton.name}_dual_root_global_joints
+  stats:
+    _target_: motionbricks.motionlib.core.utils.stats.Stats
+    folder: out/motionbricks_pose/version_1/stats/motion
+  _target_: motionbricks.motionlib.core.motion_reps.dual_root_global_joints.GlobalRootGlobalJoints
+fps: 30
+wandb_run: motionbricks_pose
+resume: false
+version: 1
+cp: last_epoch
+matmul_precision: high
+seed: 7
+id: ${hydra:runtime.choices.exp}_gpu${trainer.devices}_node${trainer.num_nodes}
+out_dir: out/motionbricks_pose
+run_dir: out/motionbricks_pose/version_1
+pure_testing: false
+config_version: 4
+data_root: datasets
+tmr_checkpoints_root: null
+use_one_logger: false

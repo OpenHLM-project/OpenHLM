@@ -1,0 +1,3 @@
+g1_recon:
+  _target_: gear_sonic.trl.losses.token_losses.G1ReconLoss
+  loss_type: "mse"  # Options: "mse", "l1", "huber"

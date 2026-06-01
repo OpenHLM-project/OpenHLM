@@ -1,0 +1,18 @@
+soma:
+  inputs:
+    [
+      "soma_joints_multi_future_local_nonflat",
+      "soma_root_ori_b_multi_future",
+      "joint_pos_multi_future_wrist_for_soma",
+    ]
+  params:
+    _target_: gear_sonic.trl.modules.base_module.BaseModule
+    input_dim:
+    output_dim:
+    num_input_temporal_dims: ${manager_env.commands.motion.smpl_num_future_frames}
+    num_output_temporal_dims: ${algo.config.actor.backbone.max_num_tokens}
+    module_config_dict:
+      layer_config:
+        type: MLP
+        hidden_dims: [2048, 1024, 512, 512]
+        activation: SiLU

@@ -1,0 +1,3 @@
+g1_teleop_latent:
+  _target_: gear_sonic.trl.losses.token_losses.G1TeleopLatentLoss
+  loss_type: "mse"  # Options: "mse", "l1", "huber", "cosine"
