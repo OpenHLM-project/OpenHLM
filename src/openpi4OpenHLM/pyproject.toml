@@ -18,6 +18,8 @@ dependencies = [
     "jax[cuda12]==0.5.3",
     "jaxtyping==0.2.36",
     "lerobot",
+    "datasets==3.6.0",
+    "chex",
     "ml_collections==1.0.0",
     "muon-optimizer",
     "numpy>=1.22.4,<2.0.0",
@@ -54,11 +56,7 @@ dev = [
     "matplotlib>=3.10.0",
     "pynvml>=12.0.0",
 ]
-rlds = [
-    "dlimp",
-    "tensorflow-cpu==2.15.0",
-    "tensorflow-datasets==4.9.9",
-]
+rlds = ["dlimp", "tensorflow-cpu==2.15.0", "tensorflow-datasets==4.9.9"]
 
 [tool.uv]
 override-dependencies = ["ml-dtypes==0.4.1", "tensorstore==0.1.74"]
@@ -75,7 +73,11 @@ members = ["packages/*"]
 [tool.ruff]
 line-length = 120
 target-version = "py311"
-extend-exclude = ["docker", "third_party", "src/openpi/models_pytorch/transformers_replace/*"]
+extend-exclude = [
+    "docker",
+    "third_party",
+    "src/openpi/models_pytorch/transformers_replace/*",
+]
 
 [tool.ruff.lint]
 # https://docs.astral.sh/ruff/rules/

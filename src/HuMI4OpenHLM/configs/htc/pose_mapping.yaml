@@ -1,0 +1,7 @@
+# Mapping from pose name in tracker logs to robot id
+PoseMapping:
+  right_hand: 0
+  left_hand: 1
+  root: 2
+  right_foot: 3
+  left_foot: 4

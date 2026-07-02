@@ -41,7 +41,7 @@ class ServerDataRecordConfig:
     """CLI config for recording demonstration data via ZMQ."""
 
     # Dataset
-    data_folder: str = "sonic_demonstration"
+    data_folder: str = "openhlm_demonstration"
     """Data output folder."""
 
     task_name: str = field(default_factory=lambda: datetime.now().strftime("%Y%m%d_%H%M"))

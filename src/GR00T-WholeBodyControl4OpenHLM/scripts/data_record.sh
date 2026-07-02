@@ -8,6 +8,7 @@ VENV_ACTIVATE="$REPO_ROOT/.venv_teleop/bin/activate"
 if [[ ! -f "$VENV_ACTIVATE" ]]; then
   echo "Could not find teleop venv: $VENV_ACTIVATE" >&2
   echo "Run from repo root: bash install_scripts/install_pico.sh" >&2
+  echo "######"
   exit 1
 fi
 
@@ -17,8 +18,8 @@ cd "$REPO_ROOT"
 
 robot_ip="192.168.123.164"
 data_frequency=30
-task_name="20260521_1102_test"
-task_desc="test"
+task_name="20260521_1102_example"
+task_desc="example"
 
 python gear_sonic/scripts/run_openhlm_data_record.py \
     --frequency "${data_frequency}" \

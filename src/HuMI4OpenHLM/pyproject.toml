@@ -1,0 +1,75 @@
+[project]
+name = "umi-tracker-data-collection"
+version = "0.1.0"
+description = "Data collection utility for UMI with HTC Vive trackers"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "av>=15.0.0",
+    "ipdb>=0.13.13",
+    "joblib>=1.5.2",
+    "loguru>=0.7.3",
+    "matplotlib>=3.10.8",
+    "mink>=0.0.13",
+    "numpy>=2.4.2",
+    "htc-interface",
+    "opencv-contrib-python>=4.13.0.92",
+    "pandas>=3.0.1",
+    "plotly>=6.0.0",
+    "pre-commit>=4.4.0",
+    "pyexiftool>=0.5.6",
+    "pyzmq>=27.1.0",
+    "rich>=14.1.0",
+    "scipy>=1.17.1",
+    "socksio>=1.0.0",
+    "tyro>=0.9.31",
+    "viser==1.0.15",
+]
+
+[project.scripts]
+offline-ik = "scripts.offline_ik:cli"
+replay = "scripts.replay:cli"
+online-ik = "scripts.online_ik_viewer:cli"
+trim = "scripts.trim:cli"
+export-pkl = "scripts.export_recording:cli"
+run-pipeline = "scripts.run_processing_pipeline:cli"
+generate-final = "scripts.processing_pipeline.generate_final:cli"
+visualize-final = "scripts.processing_pipeline.visualize_final:cli"
+backfill-final-undistort = "scripts.processing_pipeline.backfill_final_undistort:cli"
+
+[tool.uv]
+package = true
+
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "B"]
+
+[tool.ty.rules]
+unresolved-attribute = "ignore" # Suppress for mujoco bindings.
+
+[tool.pyright]
+pythonVersion = "3.11"
+reportAttributeAccessIssue = "none" # Suppress for mujoco bindings.
+
+[tool.uv.workspace]
+members = [
+    ".",
+    "packages/htc_interface",
+]
+
+[tool.uv.sources]
+umi-tracker-data-collection = { workspace = true, editable = true }
+htc-interface = { workspace = true, editable = true }
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.407",
+    "ruff>=0.14.5",
+    "ty>=0.0.1a26",
+    "umi-tracker-data-collection",
+]

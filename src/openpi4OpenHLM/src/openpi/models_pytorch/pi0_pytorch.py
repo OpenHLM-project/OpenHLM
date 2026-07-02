@@ -9,7 +9,6 @@ import torch.nn.functional as F  # noqa: N812
 import openpi.models.gemma as _gemma
 from openpi.models_pytorch.gemma_pytorch import PaliGemmaWithExpertModel
 import openpi.models_pytorch.preprocessing_pytorch as _preprocessing
-from openpi.rtc import InferenceTimeRTCConfig, InferenceTimeRTCProcessor
 
 
 def get_safe_dtype(target_dtype, device_type):
@@ -30,8 +29,8 @@ def create_sinusoidal_pos_embedding(
     if dimension % 2 != 0:
         raise ValueError(f"dimension ({dimension}) must be divisible by 2")
 
-    if time.ndim not in (1, 2):
-        raise ValueError("The time tensor is expected to be of shape `(batch_size,)` or `(batch_size, action_horizon)`.")
+    if time.ndim != 1:
+        raise ValueError("The time tensor is expected to be of shape `(batch_size,)`.")
 
     dtype = get_safe_dtype(torch.float64, device.type)
     fraction = torch.linspace(0.0, 1.0, dimension // 2, dtype=dtype, device=device)
@@ -39,17 +38,9 @@ def create_sinusoidal_pos_embedding(
 
     # Compute the outer product
     scaling_factor = 1.0 / period * 2 * math.pi
-    
-    if time.ndim == 1:
-        # Original case: (batch_size,) -> (batch_size, dimension)
-        sin_input = scaling_factor[None, :] * time[:, None]
-        return torch.cat([torch.sin(sin_input), torch.cos(sin_input)], dim=1)
-    else:
-        # RTC case: (batch_size, action_horizon) -> (batch_size, action_horizon, dimension)
-        # scaling_factor: (dimension//2,) -> (1, 1, dimension//2)
-        # time: (batch_size, action_horizon) -> (batch_size, action_horizon, 1)
-        sin_input = scaling_factor[None, None, :] * time[:, :, None]
-        return torch.cat([torch.sin(sin_input), torch.cos(sin_input)], dim=2)
+
+    sin_input = scaling_factor[None, :] * time[:, None]
+    return torch.cat([torch.sin(sin_input), torch.cos(sin_input)], dim=1)
 
 
 def sample_beta(alpha, beta, bsize, device):
@@ -222,10 +213,6 @@ class PI0Pytorch(nn.Module):
         self.training_compile_enabled = False
         self.inference_compile_enabled = False
 
-        # Inference-time RTC processor will be initialized via init_inference_time_rtc_processor
-        self.inference_time_rtc_config: InferenceTimeRTCConfig | None = None
-        self.inference_time_rtc_processor: InferenceTimeRTCProcessor | None = None
-
         paligemma_config = _gemma.get_config(config.paligemma_variant)
         action_expert_config = _gemma.get_config(config.action_expert_variant)
 
@@ -280,19 +267,6 @@ class PI0Pytorch(nn.Module):
         self.forward = torch.compile(self.forward, mode="default")
         self.training_compile_enabled = True
         logging.info("Enabled torch.compile for the training forward path")
-
-    def init_inference_time_rtc_processor(self, rtc_config: InferenceTimeRTCConfig) -> None:
-        """Initialize inference-time RTC processor with the given config. 
-        This method should be called after model instantiation to enable inference-time RTC.
-        """
-        self.inference_time_rtc_config = rtc_config
-        self.inference_time_rtc_processor = InferenceTimeRTCProcessor(rtc_config)
-        logging.info(f"Initialized inference-time RTC processor with config: enabled={rtc_config.enabled}, "
-                     f"execution_horizon={rtc_config.execution_horizon}")
-
-    def _inference_time_rtc_enabled(self) -> bool:
-        """Check if inference-time RTC is enabled."""
-        return self.inference_time_rtc_config is not None and self.inference_time_rtc_config.enabled and self.inference_time_rtc_processor is not None
 
     def gradient_checkpointing_enable(self):
         """Enable gradient checkpointing for memory optimization."""
@@ -442,7 +416,6 @@ class PI0Pytorch(nn.Module):
             att_masks += [1]
 
         # Embed timestep using sine-cosine positional encoding with sensitivity in the range [0, 1]
-        # timestep shape: (batch_size,) or (batch_size, action_horizon) for training-time RTC
         time_emb = create_sinusoidal_pos_embedding(
             timestep, self.action_in_proj.out_features, min_period=4e-3, max_period=4.0, device=timestep.device
         )
@@ -477,7 +450,7 @@ class PI0Pytorch(nn.Module):
 
             time_emb = self._apply_checkpoint(time_mlp_func, time_emb)
             action_time_emb = action_emb
-            adarms_cond = time_emb  # (bs, dim) or (bs, ah, dim) for RTC
+            adarms_cond = time_emb
 
         # Add to input tokens
         embs.append(action_time_emb)
@@ -579,7 +552,7 @@ class PI0Pytorch(nn.Module):
 
         images, img_masks, lang_tokens, lang_masks, state = self._preprocess_observation(observation, train=True)
 
-        bsize, action_horizon, action_dim = actions.shape
+        bsize = actions.shape[0]
         device = actions.device
 
         if noise is None:
@@ -589,45 +562,17 @@ class PI0Pytorch(nn.Module):
         if time is None:
             time = self.sample_time(bsize, device)
 
-        # Check if training-time RTC is enabled (only for pi05)
-        use_training_time_rtc = self.config.use_training_time_rtc and self.pi05
-        
-        if use_training_time_rtc:
-            # Training-time RTC: sample delay and create prefix mask
-            max_delay = self.config.rtc_max_delay
-            delay = torch.randint(0, max_delay + 1, (bsize,), device=device)
-            # Create prefix_mask: True for indices < delay
-            # Shape: (batch_size, action_horizon)
-            indices = torch.arange(action_horizon, device=device)[None, :]  # (1, ah)
-            prefix_mask = indices < delay[:, None]  # (bs, ah)
-            # Set time to 0 (action-prefix) for prefix positions, keep original time for postfix
-            # time: (bs,) -> time_per_position: (bs, ah)
-            time_per_position = time[:, None].expand(bsize, action_horizon).clone()
-            time_per_position = torch.where(prefix_mask, torch.zeros_like(time_per_position), time_per_position)
-            # For x_t computation: time shape (bs, ah, 1)
-            time_for_xt = time_per_position[:, :, None]
-            x_t = time_for_xt * noise + (1 - time_for_xt) * actions
-            # Compute u_t based on prediction mode
-            if self.config.x_pred:
-                # For x prediction: u_t = (x_t - actions) / t
-                u_t = (x_t - actions) / time_for_xt.clamp_min(0.05)
-            else:
-                # For v prediction: u_t = noise - actions
-                u_t = noise - actions
-            embed_time = time_per_position
+        # Standard flow matching
+        time_expanded = time[:, None, None]
+        x_t = time_expanded * noise + (1 - time_expanded) * actions
+        # Compute u_t based on prediction mode
+        if self.config.x_pred:
+            # For x prediction: u_t = (x_t - actions) / t
+            u_t = (x_t - actions) / time_expanded.clamp_min(0.05)
         else:
-            # Standard flow matching
-            time_expanded = time[:, None, None]
-            x_t = time_expanded * noise + (1 - time_expanded) * actions
-            # Compute u_t based on prediction mode
-            if self.config.x_pred:
-                # For x prediction: u_t = (x_t - actions) / t
-                u_t = (x_t - actions) / time_expanded.clamp_min(0.05)
-            else:
-                # For v prediction: u_t = noise - actions
-                u_t = noise - actions
-            prefix_mask = None
-            embed_time = time
+            # For v prediction: u_t = noise - actions
+            u_t = noise - actions
+        embed_time = time
 
         prefix_embs, prefix_pad_masks, prefix_att_masks = self.embed_prefix(images, img_masks, lang_tokens, lang_masks)
         suffix_embs, suffix_pad_masks, suffix_att_masks, adarms_cond = self.embed_suffix(state, x_t, embed_time)
@@ -675,30 +620,11 @@ class PI0Pytorch(nn.Module):
         # Handle x prediction mode: convert x_pred to v_pred
         # In this codebase, t=1 is noise and t=0 is target, so v_pred = (x_t - x_pred) / t
         if self.config.x_pred:
-            if use_training_time_rtc:
-                # time_for_xt has shape (bs, ah, 1)
-                v_t = (x_t - network_output) / time_for_xt.clamp_min(0.05)
-            else:
-                # time_expanded has shape (bs, 1, 1)
-                v_t = (x_t - network_output) / time_expanded.clamp_min(0.05)
+            v_t = (x_t - network_output) / time_expanded.clamp_min(0.05)
         else:
             v_t = network_output
 
-        if use_training_time_rtc:
-            if self.config.rtc_mask_loss:
-                # Compute loss only on postfix positions (indices >= delay)
-                postfix_mask = ~prefix_mask  # (bs, ah), True for postfix positions
-                loss = (u_t - v_t) ** 2  # (bs, ah, ad)
-                # Mask out prefix positions: (bs, ah, ad) * (bs, ah, 1)
-                loss = loss * postfix_mask[:, :, None]
-                # Normalize by number of postfix elements (sum over all dimensions, divide by postfix count)
-                loss = torch.sum(loss) / (torch.sum(postfix_mask) * action_dim + 1e-8)
-                return loss
-            else:
-                # Compute loss on all positions (both prefix and postfix)
-                return F.mse_loss(u_t, v_t, reduction="none")
-        else:
-            return F.mse_loss(u_t, v_t, reduction="none")
+        return F.mse_loss(u_t, v_t, reduction="none")
 
     @torch.no_grad()
     def sample_actions_drifting(self, device, observation, noise=None, **kwargs) -> Tensor:
@@ -796,86 +722,20 @@ class PI0Pytorch(nn.Module):
             use_cache=True,
         )
 
-        # Check if training-time RTC is enabled (only for pi05)
-        use_training_time_rtc = self.config.use_training_time_rtc and self.pi05
-
-        if use_training_time_rtc:
-            # action_prefix: supports multiple input formats:
-            #   - None: will be initialized to zeros
-            #   - (action_horizon, action_dim) or smaller: will add batch dim and pad
-            #   - (batch_size, action_horizon, action_dim) or smaller in last 2 dims: will pad
-            # inference_delay: (batch_size,) or scalar, number of valid prefix actions
-            action_prefix = kwargs.get("action_prefix")
-            inference_delay = kwargs.get("inference_delay")
-
-            if action_prefix is None:
-                action_prefix = torch.zeros(bsize, action_horizon, action_dim, device=device, dtype=noise.dtype)
-            else:
-                # Add batch dimension if needed
-                if action_prefix.ndim == 2:
-                    action_prefix = action_prefix.unsqueeze(0)
-                # Pad to (bsize, action_horizon, action_dim) if needed
-                if action_prefix.shape[1] < action_horizon or action_prefix.shape[2] < action_dim:
-                    padded = torch.zeros(bsize, action_horizon, action_dim, device=device, dtype=action_prefix.dtype)
-                    padded[:, :action_prefix.shape[1], :action_prefix.shape[2]] = action_prefix
-                    action_prefix = padded
-            assert action_prefix.shape == (bsize, action_horizon, action_dim), f"Action prefix shape: {action_prefix.shape}, expected: ({bsize}, {action_horizon}, {action_dim})"
-            if inference_delay is None:
-                inference_delay = torch.zeros(bsize, dtype=torch.long, device=device)
-            elif not isinstance(inference_delay, torch.Tensor):
-                inference_delay = torch.tensor(inference_delay, dtype=torch.long, device=device)
-            if inference_delay.ndim == 0:
-                inference_delay = inference_delay.expand(bsize)
-
-            # Create prefix_mask: True for indices < inference_delay
-            indices = torch.arange(action_horizon, device=device)[None, :]  # (1, ah)
-            action_prefix_mask = indices < inference_delay[:, None]  # (bs, ah)
-
         dt = -1.0 / num_steps
         dt = torch.tensor(dt, dtype=torch.float32, device=device)
 
         x_t = noise
         time = torch.tensor(1.0, dtype=torch.float32, device=device)
         while time >= -dt / 2:
-            if use_training_time_rtc:
-                # Replace x_t with action_prefix where prefix_mask is True
-                x_t = torch.where(action_prefix_mask[:, :, None], action_prefix, x_t)
-                # Set time to 0.0 for prefix positions (action-prefix), keep current time for postfix
-                time_per_position = torch.where(
-                    action_prefix_mask,
-                    torch.zeros(bsize, action_horizon, device=device, dtype=torch.float32),
-                    time.expand(bsize, action_horizon),
-                )
-                v_t = self.denoise_step(state, prefix_pad_masks, past_key_values, x_t, time_per_position)
-            else:
-                expanded_time = time.expand(bsize)
-
-                # Create partial function for denoising step
-                def denoise_step_partial(input_x_t, current_timestep=expanded_time):
-                    return self.denoise_step(
-                        state,
-                        prefix_pad_masks,
-                        past_key_values,
-                        input_x_t,
-                        current_timestep,
-                    )
-
-                # Apply inference-time RTC guidance if enabled
-                if self._inference_time_rtc_enabled():
-                    inference_delay = kwargs.get("inference_delay")
-                    action_prefix = kwargs.get("action_prefix")
-                    execution_horizon = kwargs.get("execution_horizon")
-
-                    v_t = self.inference_time_rtc_processor.denoise_step(
-                        x_t=x_t,
-                        action_prefix=action_prefix,
-                        inference_delay=inference_delay,
-                        time=time,
-                        original_denoise_step_partial=denoise_step_partial,
-                        execution_horizon=execution_horizon,
-                    )
-                else:
-                    v_t = denoise_step_partial(x_t)
+            expanded_time = time.expand(bsize)
+            v_t = self.denoise_step(
+                state,
+                prefix_pad_masks,
+                past_key_values,
+                x_t,
+                expanded_time,
+            )
 
             # Euler step - use new tensor assignment instead of in-place operation
             x_t = x_t + dt * v_t
@@ -891,7 +751,7 @@ class PI0Pytorch(nn.Module):
         timestep,
     ):
         """Apply one denoising step of the noise `x_t` at a given timestep.
-        
+
         Returns the velocity v_t for the Euler step. When x_pred mode is enabled,
         the network predicts x (clean target) and we convert to velocity using
         v_pred = (x_t - x_pred) / t.
@@ -932,13 +792,5 @@ class PI0Pytorch(nn.Module):
         # Handle x prediction mode: convert x_pred to v_pred
         # In this codebase, t=1 is noise and t=0 is target, so v_pred = (x_t - x_pred) / t
         if self.config.x_pred:
-            # timestep can be (batch_size,) or (batch_size, action_horizon) for RTC
-            if timestep.ndim == 1:
-                # Shape: (batch_size,) -> (batch_size, 1, 1) for broadcasting
-                v_t = (x_t - network_output) / timestep[:, None, None].clamp_min(1e-4)
-            else:
-                # Shape: (batch_size, action_horizon) -> (batch_size, action_horizon, 1)
-                v_t = (x_t - network_output) / timestep[:, :, None].clamp_min(1e-4)
-            return v_t
-        else:
-            return network_output
+            return (x_t - network_output) / timestep[:, None, None].clamp_min(1e-4)
+        return network_output

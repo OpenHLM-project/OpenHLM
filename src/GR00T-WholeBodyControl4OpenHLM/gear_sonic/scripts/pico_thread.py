@@ -362,9 +362,19 @@ class GMRPoseStreamer:
         self.prev_left_menu_button = False
         self.pending_start_command = False
 
+    def _check_emergency_stop(self, a_pressed, b_pressed, x_pressed, y_pressed):
+        if a_pressed and b_pressed and x_pressed and y_pressed:
+            print("[EmergencyStop] A+B+X+Y pressed; sending stop command")
+            for _ in range(3):
+                self.socket.send(build_command_message(start=False, stop=True, planner=False))
+                time.sleep(0.02)
+            raise SystemExit
+
     def run_once(self):
         # State machine control
         left_menu_button, left_trigger, right_trigger, left_grip, _ = get_controller_inputs()
+        a_pressed, b_pressed, x_pressed, y_pressed = get_abxy_buttons()
+        self._check_emergency_stop(a_pressed, b_pressed, x_pressed, y_pressed)
 
         new_mode = self.current_mode
         if self.current_mode == StreamMode.POSE:
@@ -420,12 +430,6 @@ class GMRPoseStreamer:
                     rate_limit=False,
                 )
                 self._last_view_stamp_ns = view_stamp_ns
-
-        a_pressed, b_pressed, x_pressed, y_pressed = get_abxy_buttons()
-        all_pressed = (a_pressed) and (b_pressed) and (x_pressed) and (y_pressed)
-        if all_pressed:
-            self.socket.send(build_command_message(start=False, stop=True, planner=False))
-            exit()
 
         toggle_data_collection_tmp = a_pressed and left_grip > 0.5
         toggle_data_abort_tmp = b_pressed and left_grip > 0.5

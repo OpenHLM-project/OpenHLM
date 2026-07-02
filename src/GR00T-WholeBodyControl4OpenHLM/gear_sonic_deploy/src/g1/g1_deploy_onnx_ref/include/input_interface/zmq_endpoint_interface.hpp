@@ -160,6 +160,25 @@ public:
         
         // Start background receiving thread
         subscriber_->Start();
+
+        // Standalone ZMQ mode also listens for high-level command messages.
+        // This keeps `--input-type zmq` compatible with Pico ABXY emergency stop
+        // without requiring the full ZMQManager input mode.
+        command_subscriber_ = std::make_unique<ZMQPackedMessageSubscriber>(
+            host, port, "command",
+            /*timeout_ms=*/100,
+            verbose,
+            /*conflate=*/false,
+            /*rcv_hwm=*/3
+        );
+        command_subscriber_->SetOnDecodedMessage(
+            [this](const std::string& topic,
+                   const ZMQPackedMessageSubscriber::DecodedHeader& hdr,
+                   const std::vector<ZMQPackedMessageSubscriber::BufferView>& bufs) {
+                this->OnCommandReceived(topic, hdr, bufs);
+            }
+        );
+        command_subscriber_->Start();
         
         // Initialize streamed motion buffer (reserve large capacity for streaming)
         ResetStreamedMotion();
@@ -172,6 +191,9 @@ public:
     ~ZMQEndpointInterface() {
         if (subscriber_) {
             subscriber_->Stop();
+        }
+        if (command_subscriber_) {
+            command_subscriber_->Stop();
         }
         // Restore terminal
         tcsetattr(STDIN_FILENO, TCSANOW, &old_termios_);
@@ -201,6 +223,14 @@ public:
         reinitialize = false;
         toggle_zmq_mode = false;
         report_temperature = false;
+
+        {
+            std::lock_guard<std::mutex> lock(command_mutex_);
+            if (pending_command_stop_) {
+                stop_control = true;
+            }
+            pending_command_stop_ = false;
+        }
 
         // Read keyboard input (same as SimpleKeyboard, but without planner keys)
         // Using shared buffered reading
@@ -1829,6 +1859,68 @@ private:
         last_receive_time_ = std::chrono::steady_clock::now();
         receive_count_++;
     }
+
+    bool DecodeCommandBool(
+        const ZMQPackedMessageSubscriber::DecodedHeader& hdr,
+        const std::vector<ZMQPackedMessageSubscriber::BufferView>& bufs,
+        const std::string& field_name,
+        bool& value) const {
+        for (size_t i = 0; i < hdr.fields.size() && i < bufs.size(); ++i) {
+            const auto& field = hdr.fields[i];
+            if (field.name != field_name) {
+                continue;
+            }
+
+            const auto& buf = bufs[i];
+            const bool needs_swap = hdr.NeedsByteSwap();
+            if (field.dtype == "bool" || field.dtype == "u8" || field.dtype == "i8") {
+                uint8_t raw = 0;
+                if (buf.size >= sizeof(uint8_t)) {
+                    std::memcpy(&raw, buf.data, sizeof(uint8_t));
+                    value = (raw != 0);
+                    return true;
+                }
+            } else if (field.dtype == "i32") {
+                int32_t raw = 0;
+                if (buf.size >= sizeof(int32_t)) {
+                    std::memcpy(&raw, buf.data, sizeof(int32_t));
+                    if (needs_swap) raw = byte_swap(raw);
+                    value = (raw != 0);
+                    return true;
+                }
+            } else if (field.dtype == "i64") {
+                int64_t raw = 0;
+                if (buf.size >= sizeof(int64_t)) {
+                    std::memcpy(&raw, buf.data, sizeof(int64_t));
+                    if (needs_swap) raw = byte_swap(raw);
+                    value = (raw != 0);
+                    return true;
+                }
+            }
+            return false;
+        }
+        return false;
+    }
+
+    void OnCommandReceived(
+        const std::string& topic,
+        const ZMQPackedMessageSubscriber::DecodedHeader& hdr,
+        const std::vector<ZMQPackedMessageSubscriber::BufferView>& bufs) {
+        bool stop = false;
+        const bool has_stop = DecodeCommandBool(hdr, bufs, "stop", stop);
+
+        if (!has_stop) {
+            std::cerr << "[ZMQEndpointInterface] Command message missing stop field" << std::endl;
+            return;
+        }
+
+        std::lock_guard<std::mutex> lock(command_mutex_);
+        pending_command_stop_ = pending_command_stop_ || stop;
+
+        if (stop) {
+            std::cout << "[ZMQEndpointInterface] Received ZMQ command stop on topic '" << topic << "'" << std::endl;
+        }
+    }
     
     // ------------------------------------------------------------------
     // Configuration
@@ -1840,6 +1932,8 @@ private:
     
     /// Background subscriber for the pose / motion topic.
     std::unique_ptr<ZMQPackedMessageSubscriber> subscriber_;
+    /// Background subscriber for high-level command messages (start / stop).
+    std::unique_ptr<ZMQPackedMessageSubscriber> command_subscriber_;
     
     struct termios old_termios_;  ///< Saved terminal state for restoration on destruction.
     
@@ -1859,6 +1953,9 @@ private:
     std::optional<std::chrono::steady_clock::time_point> last_receive_time_{}; ///< Timestamp of last OnPoseDataReceived (ms, monotonic).
     uint64_t receive_count_ = 0;       ///< Total number of messages received.
     uint64_t last_decode_time_ = 0;    ///< Timestamp of last DecodeIntoMotionSequence call (ms).
+
+    mutable std::mutex command_mutex_;  ///< Guards pending command flags below.
+    bool pending_command_stop_ = false;
     
 };
 

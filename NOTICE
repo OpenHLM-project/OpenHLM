@@ -1,0 +1,303 @@
+OpenHLM Notice and Third-Party Attributions
+===========================================
+
+This file summarizes license and attribution notices for source code, model
+weights, robot descriptions/assets, vendored third-party software, and binary
+artifacts that are included in this repository. It is intended to be distributed
+with OpenHLM together with the top-level LICENSE file and the license files kept
+inside the referenced subdirectories.
+
+This notice does not attempt to list ordinary package-manager dependencies that
+are not copied into this repository. Those dependencies remain subject to their
+own upstream licenses.
+
+
+OpenHLM
+-------
+
+The top-level OpenHLM project is licensed under the Apache License, Version 2.0.
+See:
+
+  LICENSE
+
+When redistributing OpenHLM or derivative works, keep the Apache 2.0 license,
+retain copyright, patent, trademark, and attribution notices, and mark modified
+files where required by the Apache 2.0 license.
+
+
+OpenPI Components
+-----------------
+
+This repository includes OpenPI-derived code under:
+
+  src/openpi4OpenHLM
+
+OpenPI code is provided by Physical Intelligence under the Apache License,
+Version 2.0. See:
+
+  src/openpi4OpenHLM/LICENSE
+
+This repository also includes the Gemma Terms of Use because OpenPI model code
+and checkpoints may use Gemma or PaliGemma components. If you distribute Gemma,
+PaliGemma, or Model Derivatives covered by the Gemma Terms, you must provide
+downstream recipients with the Gemma Terms and the required notice described in
+that agreement. See:
+
+  src/openpi4OpenHLM/LICENSE_GEMMA.txt
+
+The OpenPI client contains NumPy msgpack serialization code adapted from
+msgpack-numpy. Retain the source attribution when redistributing modified or
+derived copies of this code. See:
+
+  src/openpi4OpenHLM/packages/openpi-client/src/openpi_client/msgpack_numpy.py
+
+
+GR00T Whole-Body Control Components
+-----------------------------------
+
+This repository includes NVIDIA GR00T Whole-Body Control / GEAR-SONIC-derived
+code under:
+
+  src/GR00T-WholeBodyControl4OpenHLM
+
+That component uses dual licensing:
+
+  * Source code, scripts, and software components: Apache License, Version 2.0.
+  * Trained model checkpoints and weights: NVIDIA Open Model License.
+
+See:
+
+  src/GR00T-WholeBodyControl4OpenHLM/LICENSE
+  src/GR00T-WholeBodyControl4OpenHLM/docs/source/resources/license.md
+
+When redistributing NVIDIA model weights or derivative models, include the
+NVIDIA Open Model License and the attribution notice required by that license:
+
+  Licensed by NVIDIA Corporation under the NVIDIA Open Model License.
+
+Use of the NVIDIA models is also subject to NVIDIA's Trustworthy AI terms and
+applicable trade/export compliance terms as described in the NVIDIA Open Model
+License.
+
+The repository contains model-weight or model-artifact files, including but not
+limited to:
+
+  src/GR00T-WholeBodyControl4OpenHLM/decoupled_wbc/sim2mujoco/resources/robots/g1/policy/GR00T-WholeBodyControl-Balance.onnx
+  src/GR00T-WholeBodyControl4OpenHLM/decoupled_wbc/sim2mujoco/resources/robots/g1/policy/GR00T-WholeBodyControl-Walk.onnx
+  src/GR00T-WholeBodyControl4OpenHLM/motionbricks/out/G1-clip.ckpt
+
+NVIDIA's existing third-party notice files should be kept with any distribution
+that includes the GR00T Whole-Body Control component. See:
+
+  src/GR00T-WholeBodyControl4OpenHLM/legal/THIRD-PARTY SOFTWARE NOTICES - GEAR-SONIC.txt
+  src/GR00T-WholeBodyControl4OpenHLM/legal/THIRD-PARTY SOFTWARE NOTICES AND ASSET LICENSES - GEAR-SONIC.txt
+  src/GR00T-WholeBodyControl4OpenHLM/legal/Apache License - GEAR-SONIC.txt
+  src/GR00T-WholeBodyControl4OpenHLM/legal/DCO - GEAR-SONIC.txt
+
+
+GEAR-SONIC Third-Party Notices
+------------------------------
+
+The GR00T Whole-Body Control / GEAR-SONIC component declares the following
+third-party components in its legal notices:
+
+  * unitree_sdk2_python: BSD 3-Clause.
+  * XRoboToolkit-PC-Service-Pybind: MIT.
+  * robosuite: Apache License, Version 2.0.
+  * tmux-plugins/tpm: MIT.
+  * BeyondMimic: MIT.
+
+See the full notice and license summaries in:
+
+  src/GR00T-WholeBodyControl4OpenHLM/legal/THIRD-PARTY SOFTWARE NOTICES AND ASSET LICENSES - GEAR-SONIC.txt
+
+
+Vendored XRoboToolkit Video Sender and Asio
+-------------------------------------------
+
+This repository includes XRoboToolkit-Orin-Video-Sender under:
+
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/XRoboToolkit-Orin-Video-Sender
+
+XRoboToolkit-Orin-Video-Sender is licensed under MIT. See:
+
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/XRoboToolkit-Orin-Video-Sender/LICENSE
+
+That directory vendors Asio 1.30.2, which is distributed under the Boost
+Software License, Version 1.0. See:
+
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/XRoboToolkit-Orin-Video-Sender/asio-1.30.2/LICENSE_1_0.txt
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/XRoboToolkit-Orin-Video-Sender/asio-1.30.2/COPYING
+
+If redistributing the full Asio source tree, retain its copyright notices and
+any additional notices in included build-support files.
+
+
+GMR Components and Robot Assets
+-------------------------------
+
+This repository includes General Motion Retargeting (GMR) under:
+
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR
+
+GMR code is licensed under MIT. See:
+
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR/LICENSE
+
+GMR includes robot descriptions, meshes, motion assets, and vendor data with
+separate licenses. Known license files include:
+
+  * booster_t1_29dof assets: Apache License, Version 2.0.
+    src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR/assets/booster_t1_29dof/LICENSE
+
+  * engineai_pm01 assets: BSD 3-Clause.
+    src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR/assets/engineai_pm01/LICENSE
+
+  * fourier_n1 assets: GNU Lesser General Public License, Version 3.
+    src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR/assets/fourier_n1/LICENSE
+
+  * pal_talos assets: Apache License, Version 2.0.
+    src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR/assets/pal_talos/LICENSE
+
+  * pnd_adam_lite assets: MIT.
+    src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR/assets/pnd_adam_lite/LICENSE
+
+  * stanford_toddy assets: MIT.
+    src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR/assets/stanford_toddy/LICENSE
+
+  * unitree_g1 assets: BSD 3-Clause.
+    src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR/assets/unitree_g1/LICENSE
+
+  * unitree_h1 assets: BSD 3-Clause.
+    src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR/assets/unitree_h1/LICENSE
+
+  * LaFAN vendor data: Creative Commons Attribution-NonCommercial-NoDerivatives
+    4.0 International.
+    src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR/general_motion_retargeting/utils/lafan_vendor/license.txt
+
+Some GMR asset directories do not include an obvious license file in this copy
+of the repository. Before redistributing those assets, confirm their upstream
+licenses and whether commercial use, modification, or redistribution is allowed.
+Examples include:
+
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR/assets/agibot_a2
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR/assets/berkeley_humanoid_lite
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR/assets/booster_k1
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR/assets/booster_t1
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR/assets/fourier_gr3v2_1_1
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR/assets/galaxea_r1pro
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR/assets/hightorque_hi
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR/assets/kuavo_s45
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR/assets/openloong
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR/assets/tienkung
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/thirdparty/GMR/assets/unitree_h1_2
+
+
+Unitree SDK and Deployment Third-Party Components
+-------------------------------------------------
+
+This repository includes Unitree SDK code and binary libraries under:
+
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic_deploy/thirdparty/unitree_sdk2
+  src/GR00T-WholeBodyControl4OpenHLM/external_dependencies/unitree_sdk2_python
+
+Unitree SDK2 and unitree_sdk2_python are licensed under BSD 3-Clause. See:
+
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic_deploy/thirdparty/unitree_sdk2/LICENSE
+  src/GR00T-WholeBodyControl4OpenHLM/external_dependencies/unitree_sdk2_python/LICENSE
+
+The Unitree SDK2 tree also includes third-party components with separate
+licenses:
+
+  * Eclipse Cyclone DDS and Cyclone DDS CXX: Eclipse Public License 2.0 or
+    Eclipse Distribution License 1.0.
+    src/GR00T-WholeBodyControl4OpenHLM/gear_sonic_deploy/thirdparty/unitree_sdk2/licenses/eclipse-cyclonedds/cyclonedds/LICENSE
+    src/GR00T-WholeBodyControl4OpenHLM/gear_sonic_deploy/thirdparty/unitree_sdk2/licenses/eclipse-cyclonedds/cyclonedds-cxx/LICENSE
+
+  * Eclipse iceoryx: Apache License, Version 2.0.
+    src/GR00T-WholeBodyControl4OpenHLM/gear_sonic_deploy/thirdparty/unitree_sdk2/licenses/eclipse-iceoryx/iceoryx/LICENSE
+
+  * RapidJSON: MIT, with additional notices for bundled BSD and JSON License
+    components.
+    src/GR00T-WholeBodyControl4OpenHLM/gear_sonic_deploy/thirdparty/unitree_sdk2/licenses/Tencent/rapidjson/LICENSE
+
+If redistributing the prebuilt Unitree, Cyclone DDS, or DDS CXX libraries, keep
+the associated license files and notices with the binary distribution.
+
+
+HuMI and Unitree G1 Descriptions
+--------------------------------
+
+HuMI4OpenHLM includes a Unitree G1 robot description under:
+
+  src/HuMI4OpenHLM/g1_description
+
+The local README states that this folder was copied from Unitree's unitree_ros
+repository at commit d105bfb99549b9fcac80bee979fb5bbefde906f9 and modified.
+See:
+
+  src/HuMI4OpenHLM/g1_description/README.md
+
+Before public redistribution, confirm and include the original Unitree license
+terms for this copied robot description and mesh data, and retain the existing
+source attribution and modification notes.
+
+OpenPI examples also include Unitree G1 robot assets under:
+
+  src/openpi4OpenHLM/examples/unitree_g1/robot_assets
+
+Confirm the upstream license for those copied robot assets before redistributing
+them separately or in binary/model packages.
+
+
+Additional Vendored Source Notices
+----------------------------------
+
+The TensorRT CMake finder module contains an MIT license notice from Olivier Le
+Doeuff. Retain that notice if redistributing the file. See:
+
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic_deploy/cmake/FindTensorRT.cmake
+
+
+Binary SDKs and Installer Packages Requiring Review
+---------------------------------------------------
+
+This repository includes several binary SDKs, shared libraries, static libraries,
+and Debian packages. These artifacts may be subject to vendor terms that are not
+fully represented by the top-level Apache 2.0 license. Before public
+redistribution, confirm that redistribution is permitted and include the
+applicable vendor license/EULA.
+
+Known examples include:
+
+  src/GR00T-WholeBodyControl4OpenHLM/decoupled_wbc/control/teleop/device/SDKClient_Linux/ManusSDK/lib/libManusSDK.so
+  src/GR00T-WholeBodyControl4OpenHLM/decoupled_wbc/control/teleop/device/SDKClient_Linux/ManusSDK/lib/libManusSDK_Integrated.so
+  src/GR00T-WholeBodyControl4OpenHLM/decoupled_wbc/control/teleop/device/SDKClient_Linux/ManusServer.cpython-310-x86_64-linux-gnu.so
+  src/GR00T-WholeBodyControl4OpenHLM/decoupled_wbc/control/teleop/device/pico/XRoboToolkit_PC_Service_1.0.0_ubuntu_22.04_amd64.deb
+  src/GR00T-WholeBodyControl4OpenHLM/decoupled_wbc/control/teleop/device/pico/roboticsservice_1.0.0.0_arm64.deb
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic_deploy/thirdparty/roboticsservice_1.0.0.0_arm64.deb
+  src/GR00T-WholeBodyControl4OpenHLM/external_dependencies/XRoboToolkit-PC-Service-Pybind_X86_and_ARM64/lib/libPXREARobotSDK.so
+  src/GR00T-WholeBodyControl4OpenHLM/external_dependencies/XRoboToolkit-PC-Service-Pybind_X86_and_ARM64/lib/aarch64/libPXREARobotSDK.so
+
+SMPL/SMPL-X-related model or body data may also be subject to upstream data or
+model terms. Review those terms before redistribution of related files, such as:
+
+  src/GR00T-WholeBodyControl4OpenHLM/gear_sonic/trl/utils/smplx/body_model/seg_part_info.npy
+
+
+Redistribution Checklist
+------------------------
+
+When distributing this repository or a release artifact derived from it:
+
+  * Include the top-level LICENSE and this NOTICE file.
+  * Preserve license and notice files inside included subdirectories.
+  * Include the NVIDIA Open Model License and required NVIDIA attribution when
+    distributing NVIDIA model weights or derivative models.
+  * Include Gemma Terms and required Gemma notices when distributing Gemma,
+    PaliGemma, or covered Model Derivatives.
+  * Preserve MIT, BSD, Apache, Boost, EPL/EDL, LGPL, Creative Commons, and other
+    third-party notices for vendored code and assets.
+  * Confirm redistribution rights for binary SDKs, Debian packages, robot mesh
+    assets without license files, and data/model artifacts before publishing.
+  * Mark modified files where required by the applicable upstream license.

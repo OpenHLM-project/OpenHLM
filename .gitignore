@@ -214,7 +214,7 @@ logs_rl/
 logs_eval/
 
 # Model checkpoints directory
-models/
+
 
 # Downloaded from HuggingFace (hf download)
 sample_data/
@@ -237,8 +237,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# C extensions
-*.so
 
 # Distribution / packaging
 .Python
@@ -248,7 +246,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
