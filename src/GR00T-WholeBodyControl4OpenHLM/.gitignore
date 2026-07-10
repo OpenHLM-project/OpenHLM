@@ -67,7 +67,7 @@ instance/
 .scrapy
 
 # Sphinx documentation
-data/
+
 
 # PyBuilder
 .pybuilder/
@@ -205,8 +205,7 @@ uv.lock
 xrobotoolkit_sdk.cpython-*-*-*.so
 teleop_vids/
 *.code-workspace
-# Motion/training data (large local datasets, not tracked in git)
-data/
+
 bones_seed_smpl/
 sonic_release/
 # Training output logs
